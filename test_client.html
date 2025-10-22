@@ -1,0 +1,566 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>LuStA Messenger</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .app-container {
+            display: flex;
+            width: 90%;
+            max-width: 1200px;
+            height: 80vh;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        /* Стили для авторизации */
+        .auth-container {
+            width: 400px;
+            margin: 0 auto;
+            padding: 40px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .auth-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e1e5e9;
+        }
+        .auth-tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+        }
+        .auth-tab.active {
+            border-bottom-color: #6a5ae0;
+            color: #6a5ae0;
+            font-weight: bold;
+        }
+        /* Стили для основного интерфейса */
+        .sidebar {
+            width: 350px;
+            background: #f8f9fa;
+            border-right: 1px solid #e1e5e9;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            padding: 20px;
+            background: white;
+            border-bottom: 1px solid #e1e5e9;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .avatar {
+            width: 40px;
+            height: 40px;
+            background: #6a5ae0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        .chats-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+        .chat-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #e1e5e9;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .chat-item:hover {
+            background: #e9ecef;
+        }
+        .chat-item.active {
+            background: #6a5ae0;
+            color: white;
+        }
+        .chat-partner {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .last-message {
+            font-size: 14px;
+            color: #666;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .chat-item.active .last-message {
+            color: rgba(255,255,255,0.8);
+        }
+        .unread-badge {
+            background: #dc3545;
+            color: white;
+            border-radius: 10px;
+            padding: 2px 8px;
+            font-size: 12px;
+            margin-left: auto;
+        }
+        .messages-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+        .message {
+            max-width: 70%;
+            margin-bottom: 15px;
+            padding: 12px 16px;
+            border-radius: 18px;
+            position: relative;
+        }
+        .message.own {
+            background: #6a5ae0;
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+        .message.other {
+            background: white;
+            border: 1px solid #e1e5e9;
+            margin-right: auto;
+            border-bottom-left-radius: 4px;
+        }
+        .message-sender {
+            font-weight: bold;
+            font-size: 12px;
+            margin-bottom: 4px;
+            opacity: 0.8;
+        }
+        .message-time {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+        .input-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e1e5e9;
+        }
+        .message-input {
+            display: flex;
+            gap: 10px;
+        }
+        .message-input input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 25px;
+            outline: none;
+        }
+        .message-input input:focus {
+            border-color: #6a5ae0;
+        }
+        .send-btn {
+            padding: 12px 24px;
+            background: #6a5ae0;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .send-btn:hover {
+            background: #5a4ad0;
+        }
+        .send-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        .status-bar {
+            padding: 10px 20px;
+            background: #e7f3ff;
+            border-top: 1px solid #e1e5e9;
+            font-size: 14px;
+            color: #666;
+        }
+        .online-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #28a745;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Экран авторизации -->
+    <div id="authScreen" class="auth-container">
+        <div class="auth-tabs">
+            <div class="auth-tab active" onclick="showTab('login')">Вход</div>
+            <div class="auth-tab" onclick="showTab('register')">Регистрация</div>
+        </div>
+        
+        <div id="loginForm" class="auth-form">
+            <h2>Вход в LuStA</h2>
+            <input type="text" id="loginUsername" placeholder="Логин" required>
+            <input type="password" id="loginPassword" placeholder="Пароль" required>
+            <button onclick="login()" class="send-btn">Войти</button>
+            <div id="loginMessage" style="margin-top: 10px;"></div>
+        </div>
+        
+        <div id="registerForm" class="auth-form hidden">
+            <h2>Регистрация в LuStA</h2>
+            <input type="text" id="regUsername" placeholder="Придумайте логин" required>
+            <input type="password" id="regPassword" placeholder="Придумайте пароль" required>
+            <button onclick="register()" class="send-btn">Зарегистрироваться</button>
+            <div id="regMessage" style="margin-top: 10px;"></div>
+        </div>
+    </div>
+
+    <!-- Основной интерфейс мессенджера -->
+    <div id="appScreen" class="app-container hidden">
+        <!-- Боковая панель с чатами -->
+        <div class="sidebar">
+            <div class="header">
+                <div class="user-info">
+                    <div class="avatar" id="userAvatar">U</div>
+                    <div>
+                        <div id="userName">Пользователь</div>
+                        <small><span class="online-dot"></span>онлайн</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chats-list" id="chatsList">
+                <!-- Список чатов будет здесь -->
+            </div>
+            
+            <div class="status-bar">
+                <span id="onlineStatus">Подключение...</span>
+            </div>
+        </div>
+
+        <!-- Область чата -->
+        <div class="chat-area">
+            <div class="header">
+                <h3 id="currentChatName">Выберите чат</h3>
+            </div>
+            
+            <div class="messages-container" id="messagesContainer">
+                <!-- Сообщения будут здесь -->
+            </div>
+            
+            <div class="input-area">
+                <div class="message-input">
+                    <input type="text" id="messageInput" placeholder="Введите сообщение..." disabled>
+                    <button onclick="sendMessage()" class="send-btn" id="sendBtn" disabled>Отправить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let currentChat = null;
+        let ws = null;
+        let allChats = [];
+
+        // Показать/скрыть вкладки авторизации
+        function showTab(tabName) {
+            document.getElementById('loginForm').classList.toggle('hidden', tabName !== 'login');
+            document.getElementById('registerForm').classList.toggle('hidden', tabName !== 'register');
+            
+            document.querySelectorAll('.auth-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.textContent === (tabName === 'login' ? 'Вход' : 'Регистрация'));
+            });
+        }
+
+        // Регистрация (ОБНОВЛЕННАЯ)
+async function register() {
+    const username = document.getElementById('regUsername').value;
+    const password = document.getElementById('regPassword').value;
+    
+    if (!username || !password) {
+        showMessage('regMessage', '⚠️ Заполните все поля', 'error');
+        return;
+    }
+    
+    try {
+        const formData = new FormData();
+        formData.append('username', username);
+        formData.append('password', password);
+        
+        const response = await fetch('/register', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showMessage('regMessage', '✅ ' + result.message, 'success');
+            document.getElementById('regUsername').value = '';
+            document.getElementById('regPassword').value = '';
+            showTab('login');
+        } else {
+            showMessage('regMessage', '❌ ' + result.detail, 'error');
+        }
+    } catch (error) {
+        showMessage('regMessage', '❌ Ошибка соединения: ' + error.message, 'error');
+    }
+}
+
+// Вход (ОБНОВЛЕННАЯ)
+async function login() {
+    const username = document.getElementById('loginUsername').value;
+    const password = document.getElementById('loginPassword').value;
+    
+    if (!username || !password) {
+        showMessage('loginMessage', '⚠️ Заполните все поля', 'error');
+        return;
+    }
+    
+    try {
+        const formData = new FormData();
+        formData.append('username', username);
+        formData.append('password', password);
+        
+        const response = await fetch('/login', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            currentUser = result;
+            document.getElementById('userName').textContent = currentUser.username;
+            document.getElementById('userAvatar').textContent = currentUser.username[0].toUpperCase();
+            
+            document.getElementById('authScreen').classList.add('hidden');
+            document.getElementById('appScreen').classList.remove('hidden');
+            
+            connectWebSocket();
+            loadChats();
+        } else {
+            showMessage('loginMessage', '❌ ' + result.detail, 'error');
+        }
+    } catch (error) {
+        showMessage('loginMessage', '❌ Ошибка соединения: ' + error.message, 'error');
+    }
+}
+
+        // Подключение WebSocket
+        function connectWebSocket() {
+            ws = new WebSocket(`ws://localhost:8000/ws/${currentUser.username}`);
+            
+            ws.onopen = () => {
+                updateOnlineStatus('✅ Подключено');
+                document.getElementById('messageInput').disabled = false;
+                document.getElementById('sendBtn').disabled = false;
+            };
+            
+            ws.onmessage = async (event) => {
+                const data = JSON.parse(event.data);
+                
+                switch (data.type) {
+                    case 'new_message':
+                        if (currentChat && data.from_id === currentChat.partner_id) {
+                            displayMessage(data.from, data.message, data.timestamp, false);
+                        }
+                        // Обновляем список чатов
+                        await loadChats();
+                        break;
+                        
+                    case 'online_users':
+                        updateOnlineStatus(`✅ Онлайн: ${data.count} пользователей`);
+                        break;
+                        
+                    case 'message_sent':
+                        // Сообщение успешно отправлено
+                        break;
+                        
+                    case 'error':
+                        alert(data.message);
+                        break;
+                }
+            };
+            
+            ws.onclose = () => {
+                updateOnlineStatus('❌ Соединение разорвано');
+                document.getElementById('messageInput').disabled = true;
+                document.getElementById('sendBtn').disabled = true;
+                
+                // Пытаемся переподключиться через 3 секунды
+                setTimeout(connectWebSocket, 3000);
+            };
+        }
+
+        // Загрузка списка чатов
+        async function loadChats() {
+            try {
+                const response = await fetch(`/chats/${currentUser.user_id}`);
+                const result = await response.json();
+                
+                allChats = result.chats;
+                displayChats(allChats);
+                
+                // Запрашиваем онлайн пользователей
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({action: "get_online_users"}));
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки чатов:', error);
+            }
+        }
+
+        // Отображение списка чатов
+        function displayChats(chats) {
+            const chatsList = document.getElementById('chatsList');
+            chatsList.innerHTML = '';
+            
+            chats.forEach(chat => {
+                const chatItem = document.createElement('div');
+                chatItem.className = `chat-item ${currentChat?.partner_id === chat.partner_id ? 'active' : ''}`;
+                chatItem.onclick = () => openChat(chat);
+                
+                chatItem.innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: between;">
+                        <div style="flex: 1;">
+                            <div class="chat-partner">${chat.partner_username}</div>
+                            <div class="last-message">${chat.last_message || 'Нет сообщений'}</div>
+                        </div>
+                        ${chat.unread_count > 0 ? `<div class="unread-badge">${chat.unread_count}</div>` : ''}
+                    </div>
+                `;
+                
+                chatsList.appendChild(chatItem);
+            });
+        }
+
+        // Открытие чата
+        async function openChat(chat) {
+            currentChat = chat;
+            document.getElementById('currentChatName').textContent = chat.partner_username;
+            
+            // Обновляем активный чат в списке
+            displayChats(allChats);
+            
+            // Загружаем историю сообщений
+            await loadChatHistory(chat.partner_id);
+        }
+
+        // Загрузка истории сообщений
+        async function loadChatHistory(partnerId) {
+            try {
+                const response = await fetch(`/messages/${currentUser.user_id}/${partnerId}`);
+                const result = await response.json();
+                
+                displayMessages(result.messages);
+            } catch (error) {
+                console.error('Ошибка загрузки сообщений:', error);
+            }
+        }
+
+        // Отображение сообщений
+        function displayMessages(messages) {
+            const container = document.getElementById('messagesContainer');
+            container.innerHTML = '';
+            
+            messages.forEach(msg => {
+                displayMessage(msg.sender_username, msg.content, msg.timestamp, msg.sender_id === currentUser.user_id);
+            });
+        }
+
+        // Отображение одного сообщения
+        function displayMessage(sender, content, timestamp, isOwn) {
+            const container = document.getElementById('messagesContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isOwn ? 'own' : 'other'}`;
+            
+            const time = new Date(timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            messageDiv.innerHTML = `
+                ${!isOwn ? `<div class="message-sender">${sender}</div>` : ''}
+                <div>${content}</div>
+                <div class="message-time">${time}</div>
+            `;
+            
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Отправка сообщения
+        function sendMessage() {
+            if (!currentChat || !ws || ws.readyState !== WebSocket.OPEN) {
+                alert('❌ Нет активного чата или соединения!');
+                return;
+            }
+            
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            ws.send(JSON.stringify({
+                action: "send_message",
+                to: currentChat.partner_username,
+                message: message
+            }));
+            
+            // Очищаем поле ввода
+            input.value = '';
+        }
+
+        // Вспомогательные функции
+        function updateOnlineStatus(message) {
+            document.getElementById('onlineStatus').textContent = message;
+        }
+
+        function showMessage(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.style.color = type === 'error' ? '#dc3545' : '#28a745';
+        }
+
+        // Обработка нажатия Enter в поле ввода
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Автофокус на поле логина
+        document.getElementById('loginUsername').focus();
+    </script>
+</body>
+</html>
